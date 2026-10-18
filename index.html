@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divide With Haya - Guided Long Division</title>
+    <style>
+        :root {
+            --correct: #b8ffcd;
+            --wrong: #ffc6c4;
+            --primary: #712be2;
+            --primary-hover: #5b1fb8;
+            --accent: #f59e0b;
+        }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            background-color: #f4f6f9;
+            color: #333;
+        }
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .container {
+            max-width: 1050px;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .options h2 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.1rem;
+        }
+        select, button {
+            font: inherit;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        button.start, button.check, button.next, button.play-again, button.demo-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 12px 25px;
+            border-radius: 8px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button.demo-btn {
+            background-color: var(--accent);
+            color: #1e293b;
+        }
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+        button.demo-btn:hover {
+            background-color: #d97706;
+            color: white;
+        }
+        
+        /* Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 750px;
+            width: 95%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .step-card {
+            background: #f8fafc;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            border-radius: 0 10px 10px 0;
+            margin: 15px 0;
+            font-size: 1.05rem;
+        }
+        .step-badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        /* Long Division Table Styles */
+        .table, .table-game {
+            border-collapse: collapse;
+            font-size: 2rem;
+            margin: 15px auto;
+        }
+        .pipe {
+            font-size: 2.5rem;
+        }
+        .pipe div {
+            margin-top: -20px;
+            margin-left: -4px;
+        }
+        .dividend {
+            border-top: 3px solid black;
+        }
+        .table td, .table-game td {
+            min-width: 35px;
+            height: 50px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .demo-cell {
+            border: 2px solid #cbd5e1;
+            background-color: #fff;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .demo-cell.active-highlight {
+            border-color: var(--accent);
+            background-color: #fef3c7;
+        }
+
+        .game {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .game-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            width: 100%;
+        }
+        .division-area {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sidebar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 250px;
+        }
+        .cheat-sheet {
+            background: #faf5ff;
+            border: 2px dashed var(--primary);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .cheat-sheet h3 {
+            margin-top: 0;
+            color: var(--primary);
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        .cheat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 10px;
+            border-bottom: 1px solid #e9d5ff;
+            font-size: 1rem;
+            font-family: monospace;
+        }
+        .table-game td[contenteditable] {
+            border: 2px solid #cbd5e1;
+            outline: none !important;
+            background-color: #fff;
+            border-radius: 4px;
+        }
+        .table-game td[contenteditable]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 5px rgba(113,43,226,0.3);
+        }
+        .table-game tr:nth-child(2n + 3) td {
+            border-bottom: 1px solid #cbd5e1 !important;
+        }
+        .coach-box {
+            background: #e0f2fe;
+            border-left: 5px solid #0284c7;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            width: 100%;
+            font-size: 1.05rem;
+            margin-bottom: 10px;
+        }
+        .guided-steps {
+            background: #f0fdf4;
+            border: 2px solid #16a34a;
+            padding: 15px;
+            border-radius: 10px;
+            width: 100%;
+        }
+        .guided-steps h4 {
+            margin-top: 0;
+            color: #15803d;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .next {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    ✨ Divide With Haya ✨
+</div>
+
+<div class="container">
+    <!-- Options Screen -->
+    <div class="options">
+        <h2>3-Digit by 2-Digit Long Division (Guided Practice)</h2>
+        <p>Master long division step-by-step with integrated multiplication helper tables, instant feedback, and a built-in Math Coach guiding you through every problem.</p>
+        
+        <div class="form-group">
+            <label for="mode-select">Practice Mode:</label>
+            <select id="mode-select">
+                <option value="worksheet">Worksheet Problems (3-digit by 2-digit, no remainder)</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 15px;">
+            <button class="demo-btn" id="open-tutorial">📖 Learn How To Divide First</button>
+            <button class="start">Start Practicing Now!</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="game">
+        <div class="coach-box" id="coach-message">
+            💡 <strong>Math Coach Tip:</strong> Look at your multiplication helper on the right to find the closest number without going over!
+        </div>
+
+        <div class="game-layout">
+            <div class="division-area">
+                <table class="table-game" cellpadding="3" cellspacing="0"></table>
+                <div class="btn-group">
+                    <button class="check">Check Work</button>
+                    <button class="next">Next Problem</button>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="guided-steps">
+                    <h4>🧭 Step-by-Step Guide</h4>
+                    <p id="step-instruction">1. Look at the first digits of the dividend.<br>2. Check the helper table.<br>3. Write the quotient digit above.<br>4. Multiply & subtract!</p>
+                </div>
+
+                <div class="cheat-sheet">
+                    <h3>Multiplication Helper</h3>
+                    <div id="cheat-rows"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tutorial Modal -->
+<div class="modal-backdrop" id="tutorial-modal">
+    <div class="modal-content">
+        <h2 style="color: var(--primary); margin-top:0;">📚 How to Do Long Division (Walkthrough)</h2>
+        <p>Let's learn step-by-step using a sample problem: <strong>672 ÷ 14</strong></p>
+
+        <div id="tutorial-step-container"></div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+            <button id="prev-step-btn" style="background:#cbd5e1; color:#333;">Previous</button>
+            <span id="step-indicator" style="align-self: center; font-weight: bold;">Step 1 of 3</span>
+            <button id="next-step-btn">Next Step ➔</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(() => {
+    const $ = (x) => document.querySelector(x); const $$ = (x) => document.querySelectorAll(x);
+
+    // Worksheet problems (516 ÷ 12 is question #1)
+    const problems = [
+        { d: 12, dv: 516 },
+        { d: 38, dv: 760 },
+        { d: 20, dv: 680 },
+        { d: 70, dv: 280 },
+        { d: 38, dv: 494 },
+        { d: 16, dv: 192 },
+        { d: 18, dv: 450 },
+        { d: 32, dv: 480 },
+        { d: 24, dv: 912 },
+        { d: 32, dv: 736 },
+        { d: 25, dv: 775 },
+        { d: 71, dv: 852 }
+    ];
+
+    let currentIndex = 0;
+    let divisor, dividend;
+    let tutorialIndex = 0;
+
+    // Fixed tutorial example: 672 ÷ 14 = 48 (completely separate from practice problems)
+    const tutorialSteps = [
+        {
+            badge: "STEP 1: ESTIMATE & DIVIDE",
+            title: "How many times does 14 go into 67?",
+            gridHtml: `
+                <tr><td></td><td></td><td></td><td class="demo-cell active-highlight">4</td><td></td></tr>
+                <tr class="ne"><td>1</td><td>4</td><td class="pipe dividend"><div>)</div></td><td class="dividend">6</td><td class="dividend">7</td><td class="dividend">2</td></tr>
+            `,
+            content: "Look at the first two digits (<strong>67</strong>). Check your 14 times table: <strong>14 × 4 = 56</strong> (closest without going over). Write <strong>4</strong> in the quotient row above the 7."
+        },
+        {
+            badge: "STEP 2: MULTIPLY & SUBTRACT",
+            title: "Multiply 4 × 14 = 56 and subtract",
+            gridHtml: `
+                <tr><td></td><td></td><td></td><td class="demo-cell">4</td><td></td></tr>
+                <tr class="ne"><td>1</td><td>4</td><td class="pipe dividend"><div>)</div></td><td class="dividend">6</td><td class="dividend">7</td><td class="dividend">2</td></tr>
+                <tr><td></td><td></td><td></td><td class="demo-cell active-highlight">5</td><td class="demo-cell active-highlight">6</td><td></td></tr>
+                <tr><td></td><td></td><td></td><td class="demo-cell active-highlight">1</td><td class="demo-cell active-highlight">1</td><td></td></tr>
+            `,
+            content: "Write <strong>56</strong> under 67, and subtract: 67 - 56 = <strong>11</strong>."
+        },
+        {
+            badge: "STEP 3: BRING DOWN & FINISH",
+            title: "Bring down 2 to make 112",
+            gridHtml: `
+                <tr><td></td><td></td><td></td><td class="demo-cell">4</td><td class="demo-cell active-highlight">8</td></tr>
+                <tr class="ne"><td>1</td><td>4</td><td class="pipe dividend"><div>)</div></td><td class="dividend">6</td><td class="dividend">7</td><td class="dividend">2</td></tr>
+                <tr><td></td><td></td><td></td><td class="demo-cell">5</td><td class="demo-cell">6</td><td></td></tr>
+                <tr><td></td><td></td><td></td><td class="demo-cell">1</td><td class="demo-cell">1</td><td class="demo-cell active-highlight">2</td></tr>
+                <tr><td></td><td></td><td></td><td></td><td class="demo-cell">1</td><td class="demo-cell">1</td><td class="demo-cell">2</td></tr>
+                <tr><td></td><td></td><td></td><td></td><td class="demo-cell">0</td><td class="demo-cell">0</td><td class="demo-cell">0</td></tr>
+            `,
+            content: "Bring down <strong>2</strong> to form <strong>112</strong>. Check table: <strong>14 × 8 = 112</strong>. Write <strong>8</strong> in the quotient row (giving <strong>48</strong>) and subtract: 112 - 112 = 0. 🎉 Now you're ready to practice!"
+        }
+    ];
+
+    function renderTutorialStep() {
+        const step = tutorialSteps[tutorialIndex];
+        $('#tutorial-step-container').innerHTML = `
+            <div class="step-card">
+                <span class="step-badge">${step.badge}</span>
+                <h3 style="margin:5px 0 10px 0; color:#0369a1;">${step.title}</h3>
+                <div style="text-align: center; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px;">
+                    <table class="table" cellpadding="2" cellspacing="0">${step.gridHtml}</table>
+                </div>
+                <p style="margin:0;">${step.content}</p>
+            </div>
+        `;
+        $('#step-indicator').innerText = `Step ${tutorialIndex + 1} of ${tutorialSteps.length}`;
+        $('#prev-step-btn').style.visibility = tutorialIndex === 0 ? 'hidden' : 'visible';
+        $('#next-step-btn').innerText = tutorialIndex === tutorialSteps.length - 1 ? 'Start Practice! 🚀' : 'Next Step ➔';
+    }
+
+    $('#open-tutorial').addEventListener('click', () => {
+        tutorialIndex = 0;
+        renderTutorialStep();
+        $('#tutorial-modal').style.display = 'flex';
+    });
+
+    $('#prev-step-btn').addEventListener('click', () => {
+        if (tutorialIndex > 0) {
+            tutorialIndex--;
+            renderTutorialStep();
+        }
+    });
+
+    $('#next-step-btn').addEventListener('click', () => {
+        if (tutorialIndex < tutorialSteps.length - 1) {
+            tutorialIndex++;
+            renderTutorialStep();
+        } else {
+            $('#tutorial-modal').style.display = 'none';
+            $('.start').click();
+        }
+    });
+
+    function generateCheatSheet(div) {
+        let html = '';
+        for (let i = 1; i <= 9; i++) {
+            html += `<div class="cheat-row"><span>${div} × ${i}</span><span>= ${div * i}</span></div>`;
+        }
+        $('#cheat-rows').innerHTML = html;
+    }
+
+    function loadProblem() {
+        if (currentIndex >= problems.length) {
+            $(".game").innerHTML = `
+                <div style="text-align: center; padding: 30px;">
+                    <h2>🎉 Amazing Job, Haya!</h2>
+                    <p style="font-size: 1.3rem;">You completed all the guided long division practice problems successfully!</p>
+                    <button class="play-again" onclick="location.reload()">Start Over</button>
+                </div>
+            `;
+            return;
+        }
+
+        $(".next").style.display = "none";
+        divisor = problems[currentIndex].d;
+        dividend = problems[currentIndex].dv;
+
+        generateCheatSheet(divisor);
+
+        let divStr = divisor.toString();
+        let divendStr = dividend.toString();
+        let divendLen = divendStr.length;
+
+        $('#step-instruction').innerHTML = `Solving <strong>${dividend} ÷ ${divisor}</strong>.<br>Step 1: How many times does ${divisor} go into the first part of ${dividend}? Check your helper table!`;
+
+        $(".table-game").innerHTML = "<tr>" + "<td></td>".repeat(3) + "<td contenteditable></td>".repeat(divendLen) + "</tr>" + "<tr class='ne'>" + [...divStr].map((x) => "<td>" + x + "</td>").join("") + '<td class="pipe dividend"><div>)</div></td>' + [...divendStr].map((x) => "<td class='dividend'>" + x + "</td>").join("") + "</tr>" + ("<tr>" + "<td></td>".repeat(2) + "<td contenteditable></td>".repeat(divendLen + 2) + "</tr>").repeat(divendLen * 2);          const u = $$(".table-game td[contenteditable]");
+        u.forEach((x, i) => {
+            x.addEventListener("keyup", (e) => {
+                if (e.keyCode === 9) { e.preventDefault(); }
+                x.innerText = x.innerText.trim().slice(0, 1);
+                if (e.keyCode === 39 || x.innerText.length > 0) { u[i + 1]?.focus(); }
+                if (e.keyCode === 37) { u[i - 1]?.focus(); }
+                if (e.keyCode < 37 || e.keyCode > 40) { x.style.background = ""; }
+            });
+        });
+    }
+
+    $(".start").addEventListener("click", () => {
+        currentIndex = 0;
+        $(".options").style.display = "none";
+        $(".game").style.display = "flex";
+        loadProblem();
+    });
+
+    $(".next").addEventListener("click", () => {
+        currentIndex++;
+        loadProblem();
+    });
+
+    $(".check").addEventListener("click", () => {
+        const c = [...$(".table-game tr").children].filter((x) => x.hasAttribute("contenteditable"));
+        const expectedQuotient = Math.floor(dividend / divisor).toString().padStart(c.length, ' ');
+        
+        let allCorrect = true;
+        let j = 0;
+        for (const h of c) {
+            let val = h.innerText.trim();
+            if (val === '') val = ' ';
+            if (val === expectedQuotient[j]) {
+                h.style.backgroundColor = "var(--correct)";
+            } else {
+                h.style.backgroundColor = "var(--wrong)";
+                allCorrect = false;
+            }
+            j++;
+        }
+
+        if (allCorrect) {
+            $('#step-instruction').innerHTML = `✅ Excellent! ${dividend} ÷ ${divisor} = ${Math.floor(dividend / divisor)}. Click <strong>Next Problem</strong>!`;
+            $(".next").style.display = "inline-block";
+        } else {
+            $('#step-instruction').innerHTML = `❌ Check your red cells. Use the multiplication helper on the right to verify your subtraction and quotient digits!`;
+        }
+    });
+})();
+</script>
+
+</body>
+</html>
